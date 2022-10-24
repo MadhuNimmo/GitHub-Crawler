@@ -17,7 +17,7 @@
 # Libraries #
 #############
 import json
-import wget
+#import wget
 import time
 import csv
 import requests
@@ -28,13 +28,13 @@ import math
 #############
 
 URL = "https://api.github.com/search/repositories?q="  # The basic URL to use the GitHub API
-QUERY = "user:rsain"  # The personalized query (for instance, to get repositories from user 'rsain')
-SUB_QUERIES = ["+created%3A<%3D2021-03-31",
-              "+created%3A>%3D2014-01-01"]  # Different sub-queries if you need to collect more than 1000 elements
+QUERY = "topic:react-native-web"  # The personalized query (for instance, to get repositories from user 'rsain')
+#SUB_QUERIES = ["+created%3A<%3D2021-03-31","+created%3A>%3D2014-01-01"]  # Different sub-queries if you need to collect more than 1000 elements
 PARAMETERS = "&per_page=100"  # Additional parameters for the query (by default 100 items per page)
-DELAY_BETWEEN_QUERIES = 10  # The time to wait between different queries to GitHub (to avoid be banned)
-OUTPUT_FOLDER = "/your/folder/GitHub-Crawler/"  # Folder where ZIP files will be stored
-OUTPUT_CSV_FILE = "/your/folder/GitHub-Crawler/repositories.csv"  # Path to the CSV file generated as output
+SUB_QUERIES = ["+created%3A>%3D2015-01-01"]
+DELAY_BETWEEN_QUERIES = 20  # The time to wait between different queries to GitHub (to avoid be banned)
+#OUTPUT_FOLDER = "/your/folder/GitHub-Crawler/"  # Folder where ZIP files will be stored
+OUTPUT_CSV_FILE = "/Users/madhurimachakraborty/Documents/GitHub/GitHub-Crawler/repositories.csv"  # Path to the CSV file generated as output
 
 
 #############
@@ -74,24 +74,30 @@ for subquery in range(1, len(SUB_QUERIES) + 1):
         url = URL + QUERY + str(SUB_QUERIES[subquery - 1]) + PARAMETERS + "&page=" + str(currentPage)
         data = json.loads(json.dumps(getUrl(url)))
         # Iteration over all the repositories in the current json content page
-        for item in data['items']:
-            # Obtain user and repository names
-            user = item['owner']['login']
-            repository = item['name']
-            # Download the zip file of the current project
-            print("Downloading repository '%s' from user '%s' ..." % (repository, user))
-            url = item['clone_url']
-            fileToDownload = url[0:len(url) - 4] + "/archive/refs/heads/master.zip"
-            fileName = item['full_name'].replace("/", "#") + ".zip"
-            try:
-                wget.download(fileToDownload, out=OUTPUT_FOLDER + fileName)
-                repositories.writerow([user, repository, url, "downloaded"])
-            except Exception as e:
-                print("Could not download file {}".format(fileToDownload))
-                print(e)
-                repositories.writerow([user, repository, url, "error when downloading"])
-            # Update repositories counter
-            countOfRepositories = countOfRepositories + 1
+        if "items" in data:
+            for item in data['items']:
+                # Obtain user and repository names
+                #print(item.keys())
+                user = item['owner']['login']
+                repository = item['name']
+                stargazers_count = item["stargazers_count"]
+                fork_count = item["forks_count"]
+
+                # Download the zip file of the current project
+                #print("Downloading repository '%s' from user '%s' ..." % (repository, user))
+                url = item['clone_url']
+                fileToDownload = url[0:len(url) - 4] + "/archive/refs/heads/master.zip"
+                fileName = item['full_name'].replace("/", "#") + ".zip"
+                try:
+                    #wget.download(fileToDownload, out=OUTPUT_FOLDER + fileName)
+                    repositories.writerow([user, repository, url, stargazers_count, fork_count, "downloaded"])
+                except Exception as e:
+                    print("Could not download file {}".format(fileToDownload))
+                    print(e)
+                    repositories.writerow([user, repository, url, "error when downloading"])
+                # Update repositories counter
+                countOfRepositories = countOfRepositories + 1
+        
 
     # A delay between different sub-queries
     if subquery < len(SUB_QUERIES):
